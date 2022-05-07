@@ -88,7 +88,7 @@ process_next_group_list (Handle:kv) {
   KvGetString(kv, "admin_group_name", admin_group_name, sizeof(admin_group_name));
   current_admin_group_id = FindAdmGroup(admin_group_name);
   decl String:url[71];
-  Format(url, sizeof(url), "http://steamcommunity.com/gid/10358279%i/memberslistxml/?xml=1", current_steam_group_id + 1429521408);
+  Format(url, sizeof(url), "http://steamcommunity.com/gid/%i/memberslistxml/?xml=1", current_steam_group_id);
   new Handle:curl = curl_easy_init();
   if (curl != INVALID_HANDLE) {
     curl_easy_setopt_function(curl, CURLOPT_WRITEFUNCTION, on_curl_got_data);
