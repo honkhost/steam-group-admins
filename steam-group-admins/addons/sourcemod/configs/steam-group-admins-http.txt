@@ -1,0 +1,14 @@
+"steam_groups"
+{
+//  "555555"
+//  {
+//    "admin_group_name" "Clan Members"
+//    "flags" "abcdef"
+//    "immunity" "1"
+//  }
+//  "343432"
+//  {
+//    "admin_group_name" "VIPs"
+//    "flags" "a"
+//  }
+}
