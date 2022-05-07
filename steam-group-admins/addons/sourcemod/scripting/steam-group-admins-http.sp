@@ -81,14 +81,17 @@ public OnRebuildAdminCache (AdminCachePart:part) {
 }
 
 process_next_group_list (Handle:kv) {
-  decl String:group_id[10];
+  decl String:group_id[18];
   KvGetSectionName(kv, group_id, sizeof(group_id));
+  LogMessage("group_id: %i", group_id);
   current_steam_group_id = StringToInt(group_id);
+  LogMessage("current_steam_group_id: %i", current_steam_group_id);
   decl String:admin_group_name[128];
   KvGetString(kv, "admin_group_name", admin_group_name, sizeof(admin_group_name));
   current_admin_group_id = FindAdmGroup(admin_group_name);
   decl String:url[71];
-  Format(url, sizeof(url), "http://steamcommunity.com/gid/%i/memberslistxml/?xml=1", current_steam_group_id);
+  Format(url, sizeof(url), "https://steamcommunity.com/gid/%i/memberslistxml/?xml=1", current_steam_group_id);
+  LogMessage("url: %s", url);
   new Handle:curl = curl_easy_init();
   if (curl != INVALID_HANDLE) {
     curl_easy_setopt_function(curl, CURLOPT_WRITEFUNCTION, on_curl_got_data);
@@ -102,6 +105,9 @@ process_next_group_list (Handle:kv) {
 }
 
 public on_curl_got_data (Handle:hndl, const String:buffer[], const bytes, const nmemb) {
+  LogMessage("curl_data_match_found: %i", curl_data_match_found);
+  LogMessage("buffer: %s", buffer);
+  LogMessage("nmemb: %i", nmemb);
   if (!curl_data_match_found) {
     decl String:data[nmemb + CURL_DATA_TAIL_SIZE];
     strcopy(data, CURL_DATA_TAIL_SIZE, last_curl_data_tail);
@@ -132,6 +138,8 @@ public on_curl_finished (Handle:curl, CURLcode:code, any:kv) {
     CloseHandle(cache_file);
   }
   else if (code != CURLE_OK || !curl_data_match_found) {
+    LogMessage("code: %i", code);
+    LogMessage("curl_data_match_found: %i", curl_data_match_found);
     LogMessage("Couldn't fetch fresh XML data from Steam API server for Steam group ID: %i. Using old cached data, if available.", current_steam_group_id);
   }
   CloseHandle(curl);
