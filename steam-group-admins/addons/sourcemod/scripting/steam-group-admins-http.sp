@@ -8,7 +8,7 @@
 #define PLUGIN_VERSION "0.9.9b"
 
 new GroupId:current_admin_group_id;
-new current_steam_group_id;
+new String:current_steam_group_id[36];
 
 new String:cache_dir_path[PLATFORM_MAX_PATH];
 new String:cache_path[PLATFORM_MAX_PATH];
@@ -81,16 +81,17 @@ public OnRebuildAdminCache (AdminCachePart:part) {
 }
 
 process_next_group_list (Handle:kv) {
-  decl String:group_id[18];
+  decl String:group_id[36];
   KvGetSectionName(kv, group_id, sizeof(group_id));
-  LogMessage("group_id: %i", group_id);
-  current_steam_group_id = StringToInt(group_id);
-  LogMessage("current_steam_group_id: %i", current_steam_group_id);
+  LogMessage("group_id: %s", group_id);
+  // StringToIntEx(group_id, current_steam_group_id);
+  current_steam_group_id = group_id;
+  LogMessage("current_steam_group_id: %s", current_steam_group_id);
   decl String:admin_group_name[128];
   KvGetString(kv, "admin_group_name", admin_group_name, sizeof(admin_group_name));
   current_admin_group_id = FindAdmGroup(admin_group_name);
-  decl String:url[71];
-  Format(url, sizeof(url), "https://steamcommunity.com/gid/%i/memberslistxml/?xml=1", current_steam_group_id);
+  decl String:url[72];
+  Format(url, sizeof(url), "https://steamcommunity.com/gid/%s/memberslistxml/?xml=1", current_steam_group_id);
   LogMessage("url: %s", url);
   new Handle:curl = curl_easy_init();
   if (curl != INVALID_HANDLE) {
@@ -99,7 +100,7 @@ process_next_group_list (Handle:kv) {
     curl_easy_setopt_string(curl, CURLOPT_URL, url);
     curl_data_match_found = false;
     last_curl_data_tail = "";
-    Format(cache_path, sizeof(cache_path), "%s/%i.xml", cache_dir_path, current_steam_group_id);
+    Format(cache_path, sizeof(cache_path), "%s/%s.xml", cache_dir_path, current_steam_group_id);
     curl_easy_perform_thread(curl, on_curl_finished, kv);
   }
 }
@@ -118,7 +119,7 @@ public on_curl_got_data (Handle:hndl, const String:buffer[], const bytes, const 
       curl_data_match_found = true;
       cache_file = OpenFile(cache_path, "w");
       if (cache_file == INVALID_HANDLE) {
-        LogMessage("Error opening cache file for writing: %i.xml", current_steam_group_id);
+        LogMessage("Error opening cache file for writing: %s.xml", current_steam_group_id);
         return 0; //tell cURL 0 bytes were handled, which should trigger CURLE_WRITE_ERROR
       }
       WriteFileString(cache_file, data[match_position], false);
@@ -140,7 +141,7 @@ public on_curl_finished (Handle:curl, CURLcode:code, any:kv) {
   else if (code != CURLE_OK || !curl_data_match_found) {
     LogMessage("code: %i", code);
     LogMessage("curl_data_match_found: %i", curl_data_match_found);
-    LogMessage("Couldn't fetch fresh XML data from Steam API server for Steam group ID: %i. Using old cached data, if available.", current_steam_group_id);
+    LogMessage("Couldn't fetch fresh XML data from Steam API server for Steam group ID: %s. Using old cached data, if available.", current_steam_group_id);
   }
   CloseHandle(curl);
   
@@ -164,7 +165,7 @@ public on_curl_finished (Handle:curl, CURLcode:code, any:kv) {
     CloseHandle(cache_file);
   }
   else {
-    LogError("Error reading XML data from local cached file for Steam group ID: %i.", current_steam_group_id);
+    LogError("Error reading XML data from local cached file for Steam group ID: %s.", current_steam_group_id);
   }
 
   if (KvGotoNextKey(kv)) {
